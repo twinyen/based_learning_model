@@ -12,7 +12,7 @@ from cse_190_assi_3.msg import AStarPath, PolicyList
 class robot():
   def __init__(self):
     self.config = read_config()
-    self.move_list = self.config['move_list_8_direction']
+    self.move_list = self.config['move_list']
     self.map_size = self.config['map_size']
     self.start = self.config['start']
     self.goal = self.config['goal']
@@ -42,8 +42,6 @@ if __name__ == '__main__':
   rb = robot()
   rospy.sleep(2)
   mypath = astar_path(rb.grid, rb.start, rb.goal, rb.walls, rb.pits, rb.move_list)
-  print "my path is : "
-  print mypath
   policy = mdp_policy(rb.grid, rb.start, rb.goal, rb.walls, rb.pits, rb.move_list)
   
   #publish path and policy
