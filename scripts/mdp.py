@@ -3,7 +3,7 @@ import math
 import numpy as np
 from read_config import read_config
  
-def mdp_policy(grid, start, goal, walls, pits, move_list):
+def mdp_policy(model_type, model_based, grid, start, goal, walls, pits, move_list):
   # init the value iter map
   val_iter = init_value_iter(grid, start, goal, walls, pits)
   # init policy
@@ -19,10 +19,10 @@ def mdp_policy(grid, start, goal, walls, pits, move_list):
     sp_s.append(x)
  
   # do value interation
-  update_val(grid, policy, move_list, sp_s, val_iter, walls) 
+  update_val(model_type, model_based, grid, policy, move_list, sp_s, val_iter, walls) 
   return policy
 
-def update_val(grid, policy, move_list, sp_s, val_iter, walls):
+def update_val(model_type, model_based, grid, policy, move_list, sp_s, val_iter, walls):
   #update each state except the special states
   config = read_config()
   max_iter = config["max_iterations"]
@@ -35,7 +35,7 @@ def update_val(grid, policy, move_list, sp_s, val_iter, walls):
         if([x, y] not in sp_s):
           neighbors = find_neighbor([x,y], move_list, grid)
           #use function  
-          maxfuc = mdp_fuc(grid, [x,y], neighbors, val_iter, walls, policy) 
+          maxfuc = mdp_fuc(model_type, model_based, grid, [x,y], neighbors, val_iter, walls, policy) 
           #update value 
           old_val = val_iter[x][y]
           val_iter[x][y]=maxfuc
@@ -44,13 +44,23 @@ def update_val(grid, policy, move_list, sp_s, val_iter, walls):
       break
 
 
-def mdp_fuc(grid, pos, neighbors, val_iter, walls, policy):
+def mdp_fuc(model_type, model_based, grid, pos, neighbors, val_iter, walls, policy):
   # get prob
   config = read_config()
+  
   prob_f = config["prob_move_forward"]
   prob_b = config["prob_move_backward"]
   prob_l = config["prob_move_left"]
   prob_r = config["prob_move_right"]
+
+  if(model_type == 1):
+    prob_f =  model_based[pos[0]*len(grid[0]) + pos[1]][0]
+    prob_b =  model_based[pos[0]*len(grid[0]) + pos[1]][1]
+    prob_l =  model_based[pos[0]*len(grid[0]) + pos[1]][2]
+    prob_r =  model_based[pos[0]*len(grid[0]) + pos[1]][3]
+
+    #print "prob: \n", prob_f, prob_b, prob_l, prob_r
+   
 
   config = read_config()
   goal_v = config["reward_for_reaching_goal"]

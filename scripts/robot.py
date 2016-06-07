@@ -6,13 +6,16 @@ import numpy as np
 from read_config import read_config
 from astar import astar_path
 from mdp import mdp_policy
+from model_based import model_based
 from std_msgs.msg import Bool
 from cse_190_assi_3.msg import AStarPath, PolicyList
 
 class robot():
   def __init__(self):
     self.config = read_config()
-    self.move_list = self.config['move_list_8_direction']
+    self.move_list = self.config['move_list']
+    
+    #self.move_list = self.config['move_list_8_direction']
     self.map_size = self.config['map_size']
     self.start = self.config['start']
     self.goal = self.config['goal']
@@ -41,12 +44,34 @@ class robot():
 if __name__ == '__main__':
   rb = robot()
   rospy.sleep(2)
+
+  model = model_based(rb.grid, rb.start, rb.goal, rb.walls, rb.pits)
+  # convert to probability
+  for x in model:
+    summ = sum(x)
+    for y in range(0, len(x)):
+      if(summ != 0):
+        x[y] = x[y]*1.0/summ
+      
+
+  #print "model: \n", model, "\n\n"
+
   mypath = astar_path(rb.grid, rb.start, rb.goal, rb.walls, rb.pits, rb.move_list)
-  print "my path is : "
-  print mypath
-  policy = mdp_policy(rb.grid, rb.start, rb.goal, rb.walls, rb.pits, rb.move_list)
-  
+  policy = mdp_policy(0, model,rb.grid, rb.start, rb.goal, rb.walls, rb.pits, rb.move_list)
+  policy1 = mdp_policy(1, model,rb.grid, rb.start, rb.goal, rb.walls, rb.pits, rb.move_list)
+ 
+  correct = 0
+  for i in range (0, len(policy)):
+    for j in range (0, len(policy[0])):
+      if(policy[i][j] == policy1[i][j]):
+        correct += 1
+
+  percentage = correct * 100.0 / (len(policy)*len(policy[0]))
+  print "Optimal policy from MDP: \n", policy, "\n\n"
+  print "Optimal policy from model based learning: \n", policy1, "\n\n"
+  print "Percentage of correctness: \n", percentage, "%", "\n\n"
   #publish path and policy
+
   for x in mypath:
     path = AStarPath()
     path.data = x
@@ -70,7 +95,6 @@ if __name__ == '__main__':
   rospy.sleep(4)
   # shutdown
   rospy.signal_shutdown("Done")
-
 
 
 
